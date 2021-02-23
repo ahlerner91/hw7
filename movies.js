@@ -3,25 +3,27 @@ firebase.auth().onAuthStateChanged(async function(user) {
   
  if (user) {
   console.log('signed in')
-
   let db = firebase.firestore()
-  let apiKey = 'cf9025c00e8ed5d250f0ac7e9e24182f'
-  let response = await fetch(`https://api.themoviedb.org/3/movie/now_playing?api_key=${apiKey}&language=en-US`)
-  let json = await response.json()
-  let movies = json.results
-  console.log(movies)
 
   db.collection('users').doc(user.uid).set({
     name: user.displayName,
     email: user.email
   })
+  let apiKey = 'cf9025c00e8ed5d250f0ac7e9e24182f'
+  let response = await fetch(`https://api.themoviedb.org/3/movie/now_playing?api_key=${apiKey}&language=en-US`)
+  let json = await response.json()
+  let movies = json.results
+  let userId = firebase.auth().currentUser.uid
+  console.log(movies)
+
+
   
    
   for (let i=0; i<movies.length; i++) {
     let movie = movies[i]
-    let docRef = await db.collection('watched').doc(`${movie.id}`).get()
-    let watchedMovie = docRef.data()
     let movieId = movies[i].id
+    let docRef = await db.collection('watched').doc(`${movieId}-${userId}`).get()
+    let watchedMovie = docRef.data()
     let opacityClass = ''
     if (watchedMovie) {
       opacityClass = 'opacity-20'
@@ -39,11 +41,6 @@ firebase.auth().onAuthStateChanged(async function(user) {
       event.preventDefault()
       let movieElement = document.querySelector(`.movie-${movieId}`)
       movieElement.classList.add('opacity-20')
-      let userId = firebase.auth().currentUser.uid
-      await db.collection('movies')
-                                    .where('userId', '==', userId)
-                                     .where('movieId', '==', movieId).get()
-      
       await db.collection('watched').doc(`${movieId}-${userId}`).set({})
     
     })  
