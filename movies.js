@@ -15,31 +15,38 @@ firebase.auth().onAuthStateChanged(async function(user) {
     name: user.displayName,
     email: user.email
   })
-
+  
+   
   for (let i=0; i<movies.length; i++) {
     let movie = movies[i]
-    let docRef = await db.collection('watched').doc(`${movie.id}-${user.id}`).get()
+    let docRef = await db.collection('watched').doc(`${movie.id}`).get()
     let watchedMovie = docRef.data()
+    let movieId = movies[i].id
     let opacityClass = ''
     if (watchedMovie) {
       opacityClass = 'opacity-20'
     }
-
+    
+    
     document.querySelector('.movies').insertAdjacentHTML('beforeend', `
-      <div class="w-1/5 p-4 movie-${movie.id}-${user.id} ${opacityClass}">
+      <div class="w-1/5 p-4 movie-${movieId} ${opacityClass}">
         <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" class="w-full">
         <a href="#" class="watched-button block text-center text-white bg-green-500 mt-4 px-4 py-2 rounded">I've watched this!</a>
       </div>
     `)
-
-    document.querySelector(`.movie-${movie.id}-${user.id}`).addEventListener('click', async function(event) {
+  
+    document.querySelector(`.movie-${movieId}`).addEventListener('click', async function(event) {
       event.preventDefault()
-      let movieElement = document.querySelector(`.movie-${movie.id}-${user.id}`)
+      let movieElement = document.querySelector(`.movie-${movieId}`)
       movieElement.classList.add('opacity-20')
-      await db.collection('watched').doc(`${movie.id}-${user.id}`).set({})
-
+      let userId = firebase.auth().currentUser.uid
+      await db.collection('movies')
+                                    .where('userId', '==', userId)
+                                     .where('movieId', '==', movieId).get()
+      
+      await db.collection('watched').doc(`${movieId}-${userId}`).set({})
     
-    }) 
+    })  
   }
   // Create sign-out button
   document.querySelector('.sign-in-or-sign-out').innerHTML = `
